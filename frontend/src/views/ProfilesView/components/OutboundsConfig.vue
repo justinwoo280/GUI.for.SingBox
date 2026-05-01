@@ -3,8 +3,13 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { DraggableOptions } from '@/constant/app'
-import { OutboundOptions, BuiltInOutbound } from '@/constant/kernel'
-import { DefaultOutbound } from '@/constant/profile'
+import {
+  OutboundOptions,
+  BuiltInOutbound,
+  EWPTransportOptions,
+  EWPFingerprintOptions,
+} from '@/constant/kernel'
+import { DefaultOutbound, DefaultEWPNode } from '@/constant/profile'
 import { Outbound } from '@/enums/kernel'
 import { useSubscribesStore } from '@/stores'
 import { deepClone, message } from '@/utils'
@@ -95,6 +100,32 @@ const handleEditGroup = (index: number) => {
   updateGroupId = index
   fields.value = deepClone(model.value[index]!)
   showEditModal.value = true
+}
+
+const ensureEWPDefaults = () => {
+  if (!fields.value.ewp) {
+    fields.value.ewp = DefaultEWPNode()
+  }
+}
+
+const onEchToggled = (val: boolean) => {
+  ensureEWPDefaults()
+  if (val && fields.value.ewp!.reality_enabled) {
+    fields.value.ewp!.reality_enabled = false
+  }
+}
+
+const onRealityToggled = (val: boolean) => {
+  ensureEWPDefaults()
+  if (val && fields.value.ewp!.ech_enabled) {
+    fields.value.ewp!.ech_enabled = false
+  }
+}
+
+const onTypeChanged = () => {
+  if (fields.value.type === Outbound.EWP && !fields.value.ewp) {
+    fields.value.ewp = DefaultEWPNode()
+  }
 }
 
 const handleAddProxy = (groupID: string, proxyID: string, proxyName: string) => {
@@ -266,7 +297,7 @@ subscribesStore.subscribes.forEach(async ({ id, name, proxies }) => {
     </div>
     <div class="form-item">
       {{ t('kernel.outbounds.type') }}
-      <Radio v-model="fields.type" :options="OutboundOptions" />
+      <Radio v-model="fields.type" :options="OutboundOptions" @change="onTypeChanged" />
     </div>
     <template v-if="Outbound.Selector === fields.type || Outbound.Urltest === fields.type">
       <div class="form-item">
@@ -295,6 +326,128 @@ subscribesStore.subscribes.forEach(async ({ id, name, proxies }) => {
     </template>
     <template v-if="Outbound.Direct === fields.type || Outbound.Block === fields.type">
       <Empty :description="t('kernel.outbounds.directDesc')" />
+    </template>
+    <template v-else-if="fields.type === Outbound.EWP && fields.ewp">
+      <Divider>{{ t('kernel.outbounds.ewpFields.section') }}</Divider>
+      <div class="form-item">
+        {{ t('kernel.outbounds.ewpFields.server') }}
+        <Input v-model="fields.ewp.server" placeholder="example.com" />
+      </div>
+      <div class="form-item">
+        {{ t('kernel.outbounds.ewpFields.server_port') }}
+        <Input v-model="fields.ewp.server_port" type="number" placeholder="443" />
+      </div>
+      <div class="form-item">
+        {{ t('kernel.outbounds.ewpFields.uuid') }}
+        <Input v-model="fields.ewp.uuid" placeholder="UUID v4" />
+      </div>
+
+      <Divider>{{ t('kernel.outbounds.ewpFields.tls') }}</Divider>
+      <div class="form-item">
+        {{ t('kernel.outbounds.ewpFields.tls_enabled') }}
+        <Switch v-model="fields.ewp.tls_enabled" />
+      </div>
+      <template v-if="fields.ewp.tls_enabled">
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.tls_server_name') }}
+          <Input v-model="fields.ewp.tls_server_name" placeholder="(default: server)" />
+        </div>
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.tls_insecure') }}
+          <Switch v-model="fields.ewp.tls_insecure" />
+        </div>
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.tls_alpn') }}
+          <Input v-model="fields.ewp.tls_alpn" placeholder="h2,http/1.1" />
+        </div>
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.tls_fingerprint') }}
+          <Radio v-model="fields.ewp.tls_fingerprint" :options="EWPFingerprintOptions" />
+        </div>
+
+        <Divider>{{ t('kernel.outbounds.ewpFields.ech') }}</Divider>
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.ech_enabled') }}
+          <Switch
+            :model-value="fields.ewp.ech_enabled"
+            :disabled="fields.ewp.reality_enabled"
+            @update:model-value="(v: boolean) => { fields.ewp!.ech_enabled = v; onEchToggled(v) }"
+          />
+        </div>
+        <template v-if="fields.ewp.ech_enabled">
+          <div class="form-item">
+            {{ t('kernel.outbounds.ewpFields.ech_query_server_name') }}
+            <Input v-model="fields.ewp.ech_query_server_name" placeholder="(default: SNI)" />
+          </div>
+          <div class="form-item">
+            {{ t('kernel.outbounds.ewpFields.ech_config') }}
+            <Input v-model="fields.ewp.ech_config" placeholder="-----BEGIN ECH CONFIG-----" />
+          </div>
+        </template>
+
+        <Divider>{{ t('kernel.outbounds.ewpFields.reality') }}</Divider>
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.reality_enabled') }}
+          <Switch
+            :model-value="fields.ewp.reality_enabled"
+            :disabled="fields.ewp.ech_enabled"
+            @update:model-value="(v: boolean) => { fields.ewp!.reality_enabled = v; onRealityToggled(v) }"
+          />
+        </div>
+        <template v-if="fields.ewp.reality_enabled">
+          <div class="form-item">
+            {{ t('kernel.outbounds.ewpFields.reality_public_key') }}
+            <Input v-model="fields.ewp.reality_public_key" />
+          </div>
+          <div class="form-item">
+            {{ t('kernel.outbounds.ewpFields.reality_short_id') }}
+            <Input v-model="fields.ewp.reality_short_id" />
+          </div>
+        </template>
+        <div
+          v-if="fields.ewp.ech_enabled || fields.ewp.reality_enabled"
+          class="form-item"
+          style="opacity: 0.6; font-size: 12px"
+        >
+          {{ t('kernel.outbounds.ewpFields.ech_reality_mutex') }}
+        </div>
+      </template>
+
+      <Divider>{{ t('kernel.outbounds.ewpFields.transport') }}</Divider>
+      <div class="form-item">
+        {{ t('kernel.outbounds.ewpFields.transport_type') }}
+        <Radio v-model="fields.ewp.transport_type" :options="EWPTransportOptions" />
+      </div>
+      <template v-if="fields.ewp.transport_type === 'ws'">
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.ws_path') }}
+          <Input v-model="fields.ewp.ws_path" placeholder="/" />
+        </div>
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.ws_headers') }}
+          <Input v-model="fields.ewp.ws_headers" placeholder='{"Host":"example.com"}' />
+        </div>
+      </template>
+      <template v-else-if="fields.ewp.transport_type === 'grpc'">
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.grpc_service_name') }}
+          <Input v-model="fields.ewp.grpc_service_name" placeholder="GunService" />
+        </div>
+      </template>
+      <template
+        v-else-if="
+          fields.ewp.transport_type === 'http' || fields.ewp.transport_type === 'httpupgrade'
+        "
+      >
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.http_host') }}
+          <Input v-model="fields.ewp.http_host" placeholder="example.com" />
+        </div>
+        <div class="form-item">
+          {{ t('kernel.outbounds.ewpFields.http_path') }}
+          <Input v-model="fields.ewp.http_path" placeholder="/" />
+        </div>
+      </template>
     </template>
     <template v-else-if="fields.type === Outbound.Urltest">
       <div class="form-item">

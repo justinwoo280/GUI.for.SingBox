@@ -26,6 +26,16 @@ export enum Outbound {
   Block = 'block',
   Selector = 'selector',
   Urltest = 'urltest',
+  EWP = 'ewp',
+}
+
+export enum EWPTransport {
+  None = '',
+  Ws = 'ws',
+  Grpc = 'grpc',
+  HttpUpgrade = 'httpupgrade',
+  Http = 'http',
+  Quic = 'quic',
 }
 
 export enum TunStack {

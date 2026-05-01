@@ -90,7 +90,39 @@ interface IInbound {
   }
 }
 
-type OutboundType = 'direct' | 'block' | 'selector' | 'urltest'
+type OutboundType = 'direct' | 'block' | 'selector' | 'urltest' | 'ewp'
+
+type EWPTransportType = '' | 'ws' | 'grpc' | 'httpupgrade' | 'http' | 'quic'
+
+interface IEWPNode {
+  server: string
+  server_port: number
+  uuid: string
+  // tls
+  tls_enabled: boolean
+  tls_server_name: string
+  tls_insecure: boolean
+  tls_alpn: string
+  tls_fingerprint: string
+  // ECH (mutually exclusive with reality)
+  ech_enabled: boolean
+  ech_config: string
+  ech_query_server_name: string
+  // Reality (mutually exclusive with ech)
+  reality_enabled: boolean
+  reality_public_key: string
+  reality_short_id: string
+  // Transport
+  transport_type: EWPTransportType
+  // ws
+  ws_path: string
+  ws_headers: string
+  // grpc
+  grpc_service_name: string
+  // http
+  http_host: string
+  http_path: string
+}
 
 type RuleAction = 'route' | 'route-options' | 'reject' | 'hijack-dns' | 'sniff' | 'resolve'
 type DnsRuleAction = 'route' | 'route-options' | 'reject' | 'predefined'
@@ -109,6 +141,8 @@ interface IOutbound {
   exclude: string
   icon: string
   hidden: boolean
+  // ewp node fields (only used when type === 'ewp')
+  ewp?: IEWPNode
 }
 
 type RuleType =

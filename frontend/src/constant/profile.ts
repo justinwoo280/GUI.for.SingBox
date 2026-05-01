@@ -139,6 +139,29 @@ export const DefaultInbounds = (): IInbound[] => [
   },
 ]
 
+export const DefaultEWPNode = (): IEWPNode => ({
+  server: '',
+  server_port: 443,
+  uuid: '',
+  tls_enabled: true,
+  tls_server_name: '',
+  tls_insecure: false,
+  tls_alpn: '',
+  tls_fingerprint: '',
+  ech_enabled: false,
+  ech_config: '',
+  ech_query_server_name: '',
+  reality_enabled: false,
+  reality_public_key: '',
+  reality_short_id: '',
+  transport_type: '',
+  ws_path: '/',
+  ws_headers: '',
+  grpc_service_name: '',
+  http_host: '',
+  http_path: '/',
+})
+
 export const DefaultOutbound = (): IOutbound => ({
   id: sampleID(),
   tag: '',
@@ -152,6 +175,7 @@ export const DefaultOutbound = (): IOutbound => ({
   exclude: '',
   icon: '',
   hidden: false,
+  ewp: DefaultEWPNode(),
 })
 
 export const DefaultOutbounds = (): IOutbound[] => [

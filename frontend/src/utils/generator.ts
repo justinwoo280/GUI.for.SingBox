@@ -108,6 +108,76 @@ const generateOutbounds = async (outbounds: IOutbound[]) => {
       type: outbound.type,
       tag: outbound.tag,
     }
+    if (outbound.type === Outbound.EWP) {
+      const ewp = outbound.ewp
+      if (ewp) {
+        _outbound.server = ewp.server
+        _outbound.server_port = Number(ewp.server_port) || 443
+        _outbound.uuid = ewp.uuid
+        if (ewp.tls_enabled) {
+          const tls: Recordable = {
+            enabled: true,
+            server_name: ewp.tls_server_name || ewp.server,
+            insecure: !!ewp.tls_insecure,
+          }
+          if (ewp.tls_alpn) {
+            tls.alpn = ewp.tls_alpn
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          }
+          if (ewp.tls_fingerprint) {
+            tls.utls = { enabled: true, fingerprint: ewp.tls_fingerprint }
+          }
+          // ECH and Reality are mutually exclusive (UI also enforces this)
+          if (ewp.ech_enabled && !ewp.reality_enabled) {
+            tls.ech = {
+              enabled: true,
+            }
+            if (ewp.ech_query_server_name) {
+              tls.ech.query_server_name = ewp.ech_query_server_name
+            }
+            if (ewp.ech_config) {
+              tls.ech.config = ewp.ech_config.split('\n').filter(Boolean)
+            }
+          } else if (ewp.reality_enabled && !ewp.ech_enabled) {
+            tls.reality = {
+              enabled: true,
+              public_key: ewp.reality_public_key,
+              short_id: ewp.reality_short_id,
+            }
+          }
+          _outbound.tls = tls
+        }
+        if (ewp.transport_type) {
+          const transport: Recordable = { type: ewp.transport_type }
+          if (ewp.transport_type === 'ws') {
+            transport.path = ewp.ws_path || '/'
+            if (ewp.ws_headers) {
+              try {
+                transport.headers = JSON.parse(ewp.ws_headers)
+              } catch {
+                /* ignore malformed headers; user is shown raw input */
+              }
+            }
+          } else if (ewp.transport_type === 'grpc') {
+            transport.service_name = ewp.grpc_service_name
+          } else if (
+            ewp.transport_type === 'http' ||
+            ewp.transport_type === 'httpupgrade'
+          ) {
+            if (ewp.http_host) {
+              transport.host = ewp.http_host
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+            }
+            transport.path = ewp.http_path || '/'
+          }
+          _outbound.transport = transport
+        }
+      }
+    }
     if (outbound.type === Outbound.Urltest) {
       _outbound.url = outbound.url
       _outbound.interval = outbound.interval

@@ -81,6 +81,27 @@ export const OutboundOptions = [
   { label: 'kernel.outbounds.block', value: Outbound.Block },
   { label: 'kernel.outbounds.selector', value: Outbound.Selector },
   { label: 'kernel.outbounds.urltest', value: Outbound.Urltest },
+  { label: 'kernel.outbounds.ewp', value: Outbound.EWP },
+]
+
+export const EWPTransportOptions = [
+  { label: 'kernel.outbounds.ewpTransport.none', value: '' },
+  { label: 'kernel.outbounds.ewpTransport.ws', value: 'ws' },
+  { label: 'kernel.outbounds.ewpTransport.grpc', value: 'grpc' },
+  { label: 'kernel.outbounds.ewpTransport.httpupgrade', value: 'httpupgrade' },
+  { label: 'kernel.outbounds.ewpTransport.http', value: 'http' },
+  { label: 'kernel.outbounds.ewpTransport.quic', value: 'quic' },
+]
+
+export const EWPFingerprintOptions = [
+  { label: '(default)', value: '' },
+  { label: 'chrome', value: 'chrome' },
+  { label: 'firefox', value: 'firefox' },
+  { label: 'safari', value: 'safari' },
+  { label: 'ios', value: 'ios' },
+  { label: 'android', value: 'android' },
+  { label: 'edge', value: 'edge' },
+  { label: 'random', value: 'random' },
 ]
 
 export const RulesTypeOptions = [
